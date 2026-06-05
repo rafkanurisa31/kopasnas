@@ -5,7 +5,9 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 
-// 1. RUTE PEMBUAT AKUN
+// ==========================================
+// 1. RUTE PEMBUAT AKUN ADMIN
+// ==========================================
 Route::get('/buat-admin-rahasia', function () {
     try {
         DB::table('users')->where('email', 'admin@gmail.com')->delete();
@@ -24,7 +26,9 @@ Route::get('/buat-admin-rahasia', function () {
     }
 });
 
-// 2. RUTE LOGIN ADMIN
+// ==========================================
+// 2. RUTE LOGIN ADMIN (POST /api/login-admin)
+// ==========================================
 Route::post('/api/login-admin', function (Request $request) {
     $inputPassword = $request->input('password');
 
@@ -39,35 +43,95 @@ Route::post('/api/login-admin', function (Request $request) {
         ], 200);
     }
 
-    return response()->json([
-        'message' => 'Username tidak ditemukan'
-    ], 404);
+    return response()->json(['message' => 'Username atau password admin salah'], 404);
 });
 
-// 3. RUTE TAMBAH ANGGOTA (Penyelamat Tombol "Tambahkan" yang Error 404)
+// ==========================================
+// 3. RUTE TAMBAH ANGGOTA (POST /api/anggota)
+// ==========================================
 Route::post('/api/anggota', function (Request $request) {
+    $nama = $request->input('nama');
+    $kelas = $request->input('kelas');
+
     try {
-        // Coba masukkan ke tabel 'anggotas'
+        // Coba masukkan ke tabel anggotas
         DB::table('anggotas')->insert([
-            'nama'  => $request->input('nama'),
-            'kelas' => $request->input('kelas'),
+            'nama'  => $nama,
+            'kelas' => $kelas,
             'created_at' => now(),
             'updated_at' => now(),
         ]);
         return response()->json(['message' => 'Anggota berhasil ditambahkan!'], 200);
     } catch (\Exception $e) {
-        // Cadangan: Jika nama tabel di databasemu adalah 'users'
+        // Cadangan jika tabelnya adalah 'users'
         try {
             DB::table('users')->insert([
-                'name' => $request->input('nama'),
-                'email' => strtolower(str_replace(' ', '', $request->input('nama'))).'@gmail.com',
-                'password' => Hash::make($request->input('kelas')),
+                'name' => $nama,
+                'email' => strtolower(str_replace(' ', '', $nama)).'@gmail.com',
+                'password' => Hash::make($kelas),
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
-            return response()->json(['message' => 'Anggota berhasil ditambahkan!'], 200);
+            return response()->json(['message' => 'Anggota berhasil ditambahkan ke tabel users!'], 200);
         } catch (\Exception $ex) {
-            return response()->json(['message' => 'Gagal menyimpan data: ' . $ex->getMessage()], 500);
+            return response()->json(['message' => 'Gagal menyimpan: ' . $ex->getMessage()], 500);
         }
     }
+});
+
+// ==========================================
+// 4. RUTE TAMPILKAN ANGGOTA (GET /api/anggota)
+// ==========================================
+Route::get('/api/anggota', function () {
+    try {
+        $anggotas = DB::table('anggotas')->get();
+
+        if ($anggotas->isEmpty()) {
+            // Mengambil dari tabel users selain admin utama
+            $anggotas = DB::table('users')
+                          ->where('email', '!=', 'admin@gmail.com')
+                          ->select('id', 'name as nama', 'email as kelas')
+                          ->get();
+        }
+
+        // Format dibungkus dalam objek 'data' sesuai permintaan Vue kamu
+        return response()->json([
+            'data' => $anggotas
+        ], 200);
+
+    } catch (\Exception $e) {
+        return response()->json(['data' => []], 200);
+    }
+});
+
+// ==========================================
+// 5. RUTE LOGIN ANGGOTA (POST /api/login-anggota)
+// ==========================================
+Route::post('/api/login-anggota', function (Request $request) {
+    $nama = $request->input('nama');
+    $kelas = $request->input('kelas');
+
+    // Cari berdasarkan nama di tabel anggotas atau users
+    $anggota = DB::table('anggotas')->where('nama', $nama)->first();
+
+    if (!$anggota) {
+        $anggota = DB::table('users')->where('name', $nama)->first();
+        if ($anggota) {
+            $anggota->nama = $anggota->name;
+            $anggota->kelas = "XI TJKT 3"; // fallback kelas default
+        }
+    }
+
+    if ($anggota) {
+        return response()->json([
+            'role' => 'anggota',
+            'data' => [
+                'id' => $anggota->id,
+                'nama' => $anggota->nama,
+                'kelas' => $anggota->kelas ?? 'XI'
+            ]
+        ], 200);
+    }
+
+    return response()->json(['message' => 'Data anggota tidak ditemukan'], 404);
 });
