@@ -1,4 +1,4 @@
-FROM php:8.2-fpm-alpine
+FROM php:8.4-fpm-alpine
 
 # Install sistem dependencies & ekstensi PHP yang dibutuhkan Laravel
 RUN apk add --no-cache nginx wget supervisor bzip2 build-base nodejs npm
