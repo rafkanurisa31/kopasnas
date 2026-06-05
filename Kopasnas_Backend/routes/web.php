@@ -2,28 +2,33 @@
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/buat-admin-rahasia', function () {
     try {
-        // Cek apakah admin dengan email ini sudah ada
-        $adminExist = DB::table('users')->where('email', 'admin@gmail.com')->first();
-
-        if ($adminExist) {
-            return "Akun admin sudah ada di database!";
+        // 1. Trik Jitu: Jika kolom 'username' belum ada di tabel users, kita buatkan langsung!
+        if (!Schema::hasColumn('users', 'username')) {
+            Schema::table('users', function ($table) {
+                $table->string('username')->nullable();
+            });
         }
 
-        // Masukkan data sesuai kolom yang pasti ada di database standar Laravel
+        // Hapus data admin lama biar tidak bentrok
+        DB::table('users')->where('username', 'admin')->delete();
+
+        // 2. Masukkan data admin baru yang punya username 'admin'
         DB::table('users')->insert([
             'name' => 'Administrator',
-            'email' => 'admin@gmail.com', // Kolom login utama kamu
+            'username' => 'admin', // Ini yang dicari oleh form login kamu!
+            'email' => 'admin@gmail.com',
             'password' => Hash::make('password123'), // Password kamu
             'created_at' => now(),
             'updated_at' => now(),
         ]);
 
-        return "Akun sukses dibuat! Silakan login menggunakan Email: admin@gmail.com | Password: password123";
+        return "Sistem Diperbarui! Akun admin sukses dibuat. Silakan login menggunakan Username: admin | Password: password123";
     } catch (\Exception $e) {
-        return "Gagal membuat akun. Eror aslinya: " . $e->getMessage();
+        return "Gagal memperbarui sistem. Eror: " . $e->getMessage();
     }
 });
