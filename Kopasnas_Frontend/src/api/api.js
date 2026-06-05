@@ -2,7 +2,7 @@ import axios from 'axios'
 
 const api = axios.create({
 
-baseURL:'http://kopasnas-api.gt.tc/api'
+baseURL:'https://kopasnas.onrender.com/api'
 
 })
 
