@@ -2,7 +2,7 @@ FROM php:8.4-fpm-alpine
 
 # Install sistem dependencies & ekstensi PHP yang dibutuhkan Laravel
 RUN apk add --no-cache nginx wget supervisor bzip2 build-base nodejs npm
-RUN docker-php-ext-install pdo pdo_mysql
+RUN docker-php-ext-install pdo pdo_mysql pdo_pgsql
 
 # Set working directory
 WORKDIR /var/www/html
