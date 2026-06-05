@@ -54,20 +54,19 @@ class VotingController extends Controller
     }
 
     public function show(string $id)
-    {
-        $data = Voting::with('opsi')->find($id);
+{
+    // Tambahkan with('opsi') agar data pilihan kandidat ikut terbawa
+    $data = Voting::with('opsi')->find($id);
 
-        if (!$data) {
-            return response()->json([
-                'message' => 'Data tidak ditemukan'
-            ], 404);
-        }
-
-        return response()->json([
-            'success' => true,
-            'data' => $data
-        ], 200);
+    if (!$data) {
+        return response()->json(['message' => 'Data tidak ditemukan'], 404);
     }
+
+    return response()->json([
+        'success' => true,
+        'data' => $data // Data sekarang sudah berisi array opsi
+    ], 200);
+}
 
     public function result(string $id)
     {
