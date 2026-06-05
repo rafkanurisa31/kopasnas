@@ -16,13 +16,12 @@ Route::get('/buat-admin-rahasia', function () {
 
         // Hapus data admin lama biar tidak bentrok
         DB::table('users')->where('username', 'admin')->delete();
-
-        // 2. Masukkan data admin baru yang punya username 'admin'
+// Masukkan data admin baru dengan email berbeda agar tidak duplikat
         DB::table('users')->insert([
             'name' => 'Administrator',
             'username' => 'admin', // Ini yang dicari oleh form login kamu!
-            'email' => 'admin@gmail.com',
-            'password' => Hash::make('password123'), // Password kamu
+            'email' => 'adminbaru@gmail.com', // Diubah agar tidak bentrok
+            'password' => Hash::make('password123'),
             'created_at' => now(),
             'updated_at' => now(),
         ]);
