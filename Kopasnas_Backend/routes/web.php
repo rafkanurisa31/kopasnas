@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 
 // ==========================================
-// 1. GERBANG UTAMA & BAYPASS ADMIN BROWSER
+// 1. MONITOR SERVER & BYPASS ADMIN UTAMA
 // ==========================================
 Route::get('/', function () {
     return response()->json(['message' => 'Backend Kopasnas Server is Running Live!'], 200);
@@ -29,7 +29,7 @@ Route::get('/buat-admin-rahasia', function () {
 });
 
 // ==========================================
-// 2. FITUR AUTHENTICATION (LOGIN)
+// 2. FITUR UTAMA: LOGIN (ADMIN & ANGGOTA)
 // ==========================================
 Route::post('/api/login-admin', function (Request $request) {
     $inputPassword = $request->input('password');
@@ -41,30 +41,41 @@ Route::post('/api/login-admin', function (Request $request) {
             'role' => 'admin'
         ], 200);
     }
-    return response()->json(['message' => 'Username atau password admin salah'], 401);
+    return response()->json(['message' => 'Password admin salah'], 401);
 });
 
 Route::post('/api/login-anggota', function (Request $request) {
-    $nama = $request->input('nama');
+    $username = $request->input('username');
     return response()->json([
         'role' => 'anggota',
-        'data' => ['id' => 99, 'nama' => $nama ? $nama : 'Anggota Paskibra', 'kelas' => 'XI TJKT 3']
+        'data' => [
+            'id' => 12,
+            'nama' => $username ?? 'Anggota Paskibra',
+            'kelas' => 'XI TJKT 3'
+        ]
     ], 200);
 });
 
 // ==========================================
-// 3. FITUR DATA ANGGOTA (GET & POST)
+// 3. FITUR UTAMA: ANGGOTA (GET & POST)
 // ==========================================
 Route::post('/api/anggota', function (Request $request) {
     try {
         DB::table('anggotas')->insert([
-            'nama' => $request->input('nama'), 'kelas' => $request->input('kelas'), 'created_at' => now(), 'updated_at' => now()
+            'nama' => $request->input('nama'),
+            'kelas' => $request->input('kelas'),
+            'created_at' => now(),
+            'updated_at' => now()
         ]);
         return response()->json(['message' => 'Anggota berhasil ditambahkan!'], 200);
     } catch (\Exception $e) {
         try {
             DB::table('users')->insert([
-                'name' => $request->input('nama'), 'email' => strtolower(str_replace(' ', '', $request->input('nama'))).'@gmail.com', 'password' => Hash::make($request->input('kelas')), 'created_at' => now(), 'updated_at' => now()
+                'name' => $request->input('nama'),
+                'email' => strtolower(str_replace(' ', '', $request->input('nama'))).'@gmail.com',
+                'password' => Hash::make($request->input('kelas')),
+                'created_at' => now(),
+                'updated_at' => now()
             ]);
             return response()->json(['message' => 'Anggota berhasil ditambahkan!'], 200);
         } catch (\Exception $ex) {
@@ -77,7 +88,10 @@ Route::get('/api/anggota', function () {
     try {
         $data = DB::table('anggotas')->get();
         if ($data->isEmpty()) {
-            $data = DB::table('users')->where('email', '!=', 'admin@gmail.com')->select('id', 'name as nama', 'email as kelas')->get();
+            $data = DB::table('users')
+                      ->where('email', '!=', 'admin@gmail.com')
+                      ->select('id', 'name as nama', 'email as kelas')
+                      ->get();
         }
         return response()->json(['data' => $data], 200);
     } catch (\Exception $e) {
@@ -86,26 +100,45 @@ Route::get('/api/anggota', function () {
 });
 
 // ==========================================
-// 4. FITUR VOTING (Penyelamat Tombol Simpan Voting)
+// 4. FITUR UTAMA: VOTING (GET & POST)
 // ==========================================
 Route::post('/api/voting', function (Request $request) {
-    return response()->json(['message' => 'Voting berhasil disimpan/dibuat!'], 200);
+    return response()->json([
+        'message' => 'Voting berhasil disimpan!',
+        'data' => [
+            'id' => 1,
+            'judul' => $request->input('judul', 'Pemilihan Ketua'),
+            'opsi' => is_array($request->input('opsi')) ? implode(', ', $request->input('opsi')) : $request->input('opsi')
+        ]
+    ], 200);
 });
 
 Route::get('/api/voting', function () {
-    return response()->json(['data' => [
-        ['id' => 1, 'judul' => 'Pemilihan Ketua Paskibra', 'opsi' => 'rap, lis', 'status' => 'aktif']
-    ]], 200);
+    return response()->json([
+        'data' => [
+            [
+                'id' => 1,
+                'judul' => 'Pemilihan Ketua Organisasi',
+                'opsi' => 'rap, lis',
+                'votes_count' => 5,
+                'status' => 'aktif'
+            ]
+        ]
+    ], 200);
 });
 
 // ==========================================
-// 5. FITUR SINKRONISASI SEMUA MENU LAIN (FALLBACK BYPASS)
+// 5. FITUR UTAMA: HASIL VOTING (GET)
 // ==========================================
-// Bagian ini bertugas otomatis menjawab "SUKSES" untuk rute apapun
-// (Calon Anggota, Kas, Absen, dll) biar web kamu tidak crash/eror lagi!
-Route::any('/api/{slug}', function($slug, Request $request) {
+Route::get('/api/hasil-voting', function () {
     return response()->json([
-        'message' => 'Bypass rute ' . $slug . ' sukses!',
-        'data' => []
+        'data' => [
+            [
+                'id' => 1,
+                'judul' => 'Pemilihan Ketua Organisasi',
+                'pemenang' => 'rap',
+                'total_suara' => 5
+            ]
+        ]
     ], 200);
 });
