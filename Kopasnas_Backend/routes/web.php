@@ -7,27 +7,40 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/buat-admin-rahasia', function () {
     try {
-        // 1. Trik Jitu: Jika kolom 'username' belum ada di tabel users, kita buatkan langsung!
+        // 1. Pastikan kolom username ada di database
         if (!Schema::hasColumn('users', 'username')) {
             Schema::table('users', function ($table) {
                 $table->string('username')->nullable();
             });
         }
 
-        // Hapus data admin lama biar tidak bentrok
+        // 2. Bersihkan data lama agar TIDAK ADA eror duplikat/unique constraint lagi
         DB::table('users')->where('username', 'admin')->delete();
-// Masukkan data admin baru dengan email berbeda agar tidak duplikat
+        DB::table('users')->where('email', 'admin@gmail.com')->delete();
+        DB::table('users')->where('email', 'adminbaru@gmail.com')->delete();
+
+        // 3. AKUN PERTAMA: Login menggunakan kata 'admin'
         DB::table('users')->insert([
-            'name' => 'Administrator',
-            'username' => 'admin', // Ini yang dicari oleh form login kamu!
-            'email' => 'adminbaru@gmail.com', // Diubah agar tidak bentrok
+            'name' => 'Admin Utama',
+            'username' => 'admin',
+            'email' => 'adminbaru@gmail.com',
             'password' => Hash::make('password123'),
             'created_at' => now(),
             'updated_at' => now(),
         ]);
 
-        return "Sistem Diperbarui! Akun admin sukses dibuat. Silakan login menggunakan Username: admin | Password: password123";
+        // 4. AKUN KEDUA: Login menggunakan kata 'admin@gmail.com'
+        DB::table('users')->insert([
+            'name' => 'Admin Email',
+            'username' => 'admin_email',
+            'email' => 'admin@gmail.com',
+            'password' => Hash::make('password123'),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        return "SABOTASE BERHASIL! Semua data lama dibersihkan. Akun baru siap digunakan.";
     } catch (\Exception $e) {
-        return "Gagal memperbarui sistem. Eror: " . $e->getMessage();
+        return "Gagal total. Erornya: " . $e->getMessage();
     }
 });
